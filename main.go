@@ -1,45 +1,46 @@
 package main
 
 import (
+	"bytes"
 	"cas-storage/p2p"
+	"log"
 	"time"
 )
 
-func OnPeer(p p2p.Peer) error {
-	p.Close()
-	return nil
-}
-func main() {
+func makeServer(listenAddr, root string, nodes ...string) *FileServer {
 	tcptransportOpts := p2p.TCPTransportOps{
-		ListenAddress: ":3000",
+		ListenAddress: listenAddr,
 		Decoder:       p2p.DefaultDecoder{},
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		// OnPeer:        OnPeer,
 	}
 	tcpTransport := p2p.NewTCPTransport(tcptransportOpts)
-	fileServerOpts := FileServerOpts{
-		StorageRoot:       "3000_network",
+	s := NewFileServer(FileServerOpts{
+		StorageRoot:       root,
 		PathTransformFunc: CASPathTransformFunc,
 		Transport:         tcpTransport,
-	}
+		BootstrapNodes:    nodes,
+	})
+	tcpTransport.OnPeer = s.OnPeer
 
-	s := NewFileServer(fileServerOpts)
+	return s
+}
+func main() {
+
+	s1 := makeServer(":3001", "3000_network")
+
 	go func() {
-		time.Sleep(2 * time.Second)
-		s.Close()
+		log.Fatal(s1.Start())
 	}()
-	s.Start()
+	s2 := makeServer(":4001", "4000_network", ":3001")
 
-	select{}
+	go s2.Start()
 
-	// ts := p2p.NewTCPTransport(opts)
-	// if err := ts.ListenAndAccept(); err != nil {
-	// 	log.Fatalln(err)
-	// }
+	time.Sleep(1 * time.Second)
 
-	// for {
-	// 	msg := <-ts.Consume()
-	// 	fmt.Println(string(msg.Payload))
-	// }
-	// select {}
+	// s2.peers["127.0.0.1:3000"].Send([]byte("abc"))
+	data := bytes.NewBuffer([]byte("hi"))
+	s2.StoreData("key",data)
+
+	select {}
 }

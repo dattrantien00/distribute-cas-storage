@@ -86,7 +86,7 @@ func (s *Store) Has(key string) bool {
 	return true
 }
 
-func (s *Store) Clear() error{
+func (s *Store) Clear() error {
 	return os.RemoveAll(s.Root)
 }
 func (s *Store) Delete(key string) error {
@@ -113,8 +113,8 @@ func (s *Store) Read(key string) (io.Reader, error) {
 	return buf, nil
 }
 
-func (s *Store) Write(key string,r io.Reader) error{
-	return s.writeStream(key,r)
+func (s *Store) Write(key string, r io.Reader) error {
+	return s.writeStream(key, r)
 }
 func (s *Store) readStream(key string) (io.ReadCloser, error) {
 	pathKey := s.PathTransformFunc(key)
@@ -140,6 +140,7 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
 	log.Printf("written (%d) bytes to disk: %s", n, fullPathWithRoot)
 	return nil
 
